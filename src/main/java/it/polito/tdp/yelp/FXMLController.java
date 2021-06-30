@@ -4,9 +4,12 @@
 
 package it.polito.tdp.yelp;
 
+
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.yelp.model.Business;
 import it.polito.tdp.yelp.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -18,6 +21,7 @@ import javafx.scene.control.TextField;
 public class FXMLController {
 	
 	private Model model;
+	private boolean grafoCreato = false;
 
     @FXML // ResourceBundle that was given to the FXMLLoader
     private ResourceBundle resources;
@@ -35,32 +39,88 @@ public class FXMLController {
     private Button btnPercorso; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbCitta"
-    private ComboBox<?> cmbCitta; // Value injected by FXMLLoader
+    private ComboBox<String> cmbCitta; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtX"
     private TextField txtX; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbAnno"
-    private ComboBox<?> cmbAnno; // Value injected by FXMLLoader
+    private ComboBox<Integer> cmbAnno; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbLocale"
-    private ComboBox<?> cmbLocale; // Value injected by FXMLLoader
+    private ComboBox<Business> cmbLocale; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
 
     @FXML
     void doCalcolaPercorso(ActionEvent event) {
-    	
+    	this.txtResult.clear();
+    	if(!this.grafoCreato) {
+    		this.txtResult.appendText("Creare il grafo\n");
+    		return;
+    	}
+    	if(this.txtX.getText().equals("")) {
+    		this.txtResult.appendText("Selezionare una soglia X\n");
+    		return;
+    	}
+    	double x = 0.0;
+    	try {
+    		x = Double.parseDouble(this.txtX.getText());
+    	}catch (NumberFormatException e) {
+    		this.txtResult.appendText("Il valore di soglia X deve essere un decimale positivo compreso tra 0 e 1");
+    		return;
+    	}
+    	if(x<=0.0 || x>1.0) {
+    		this.txtResult.appendText("Il valore di soglia X deve essere un decimale positivo compreso tra 0 e 1");
+    		return;
+    	}
+    	Business partenza = this.cmbLocale.getValue();
+    	if(partenza==null) {
+    		this.txtResult.appendText("Selezionare un locale di partenza\n");
+    		return;
+    	}
+    	List<Business> percorso = this.model.calcolaPercorso(partenza, x);
+    	if(percorso==null) {
+    		this.txtResult.appendText("Nessun percorso trovato\n");
+    		return;
+    	}
+    	this.txtResult.appendText("Individuato il seguente percorso:\n");
+    	for(Business b : percorso) {
+    		this.txtResult.appendText(b+"\n");
+    	}
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	this.txtResult.clear();
+    	String city = this.cmbCitta.getValue();
+    	Integer year = this.cmbAnno.getValue();
+    	if(city==null) {
+    		this.txtResult.appendText("Selezionare una città\n");
+    		return;
+    	}
+    	if(year==null) {
+    		this.txtResult.appendText("Selezionare un anno\n");
+    		return;
+    	}
+    	this.model.creaGrafo(city, year);
+    	this.grafoCreato = true;
+    	this.txtResult.appendText("Grafo creato.\n# vertici: "+this.model.getNumVertici()+"\n# archi: "+this.model.getNumArchi()+"\n");
+    	this.cmbLocale.getItems().clear();
+    	this.cmbLocale.getItems().addAll(this.model.getLocali());
 
     }
 
     @FXML
     void doLocaleMigliore(ActionEvent event) {
+    	this.txtResult.clear();
+    	if(!this.grafoCreato) {
+    		this.txtResult.appendText("Creare il grafo\n");
+    		return;
+    	}
+    	this.txtResult.appendText("Il miglior locale in cui passare la serata è: "+this.model.getBestLocale()+"\n");
+    	
 
     }
 
@@ -78,5 +138,15 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	this.cmbCitta.getItems().addAll(this.model.getCities());
+    	this.cmbAnno.getItems().add(2005);
+    	this.cmbAnno.getItems().add(2006);
+    	this.cmbAnno.getItems().add(2007);
+    	this.cmbAnno.getItems().add(2008);
+    	this.cmbAnno.getItems().add(2009);
+    	this.cmbAnno.getItems().add(2010);
+    	this.cmbAnno.getItems().add(2011);
+    	this.cmbAnno.getItems().add(2012);
+    	this.cmbAnno.getItems().add(2013);
     }
 }
